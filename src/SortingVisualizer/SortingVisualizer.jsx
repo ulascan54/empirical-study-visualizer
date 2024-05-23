@@ -16,10 +16,13 @@ export default class SortingVisualizer extends React.Component {
 
     this.state = {
       array: [],
-      animationSpeed: 1,
-      numberOfArrayBars: 30,
-      tempAnimationSpeed: 1,
-      tempNumberOfArrayBars: 30,
+      keep: [],
+      animationSpeed: 4,
+      numberOfArrayBars: 150,
+      tempAnimationSpeed: 4,
+      tempNumberOfArrayBars: 150,
+      sorting: false,
+      countdown: 0,
     };
   }
 
@@ -32,7 +35,19 @@ export default class SortingVisualizer extends React.Component {
     for (let i = 0; i < this.state.numberOfArrayBars; i++) {
       array.push(randomIntFromInterval(5, 730));
     }
+    this.setState({array, keep: array.slice(), countdown: 0});
+  }
+
+  getKeep() {
+    const {keep, numberOfArrayBars} = this.state;
+    const array = keep.slice(0, numberOfArrayBars);
     this.setState({array});
+  }
+
+  fixKeep() {
+    const {array, numberOfArrayBars} = this.state;
+    const keep = array.slice(0, numberOfArrayBars);
+    this.setState({keep});
   }
 
   updateSettings() {
@@ -50,7 +65,31 @@ export default class SortingVisualizer extends React.Component {
     this.setState({[key]: parseInt(event.target.value) || 0});
   }
 
+  startCountdown() {
+    this.setState({countdown: 3}, () => {
+      const countdownInterval = setInterval(() => {
+        this.setState(prevState => {
+          if (prevState.countdown === 1) {
+            clearInterval(countdownInterval);
+            this.resetArray();
+            return {countdown: 0};
+          } else {
+            return {countdown: prevState.countdown - 1};
+          }
+        });
+      }, 1000);
+    });
+  }
+
+  handleSortCompletion() {
+    this.setState({sorting: false});
+    this.startCountdown();
+  }
+
   mergeSort() {
+    this.setState({sorting: true});
+    this.getKeep();
+
     const animations = getMergeSortAnimations(this.state.array);
     for (let i = 0; i < animations.length; i++) {
       const arrayBars = document.getElementsByClassName('array-bar');
@@ -69,12 +108,16 @@ export default class SortingVisualizer extends React.Component {
           const [barOneIdx, newHeight] = animations[i];
           const barOneStyle = arrayBars[barOneIdx].style;
           barOneStyle.height = `${newHeight}px`;
+          if (i === animations.length - 1) this.handleSortCompletion();
         }, i * this.state.animationSpeed);
       }
     }
   }
 
   quickSort() {
+    this.setState({sorting: true});
+    this.getKeep();
+
     const animations = getQuickSortAnimations(this.state.array);
     for (let i = 0; i < animations.length; i++) {
       const arrayBars = document.getElementsByClassName('array-bar');
@@ -96,13 +139,19 @@ export default class SortingVisualizer extends React.Component {
           const [, barOneIdx, newHeight] = animations[i];
           const barOneStyle = arrayBars[barOneIdx].style;
           barOneStyle.height = `${newHeight}px`;
+          if (i === animations.length - 1) this.handleSortCompletion();
         }, i * this.state.animationSpeed);
       }
     }
+    this.fixKeep();
   }
 
   bubbleSort() {
+    this.setState({sorting: true});
+    this.getKeep();
     const animations = getBubbleSortAnimations(this.state.array);
+    const animationSpeed = this.state.animationSpeed;
+
     for (let i = 0; i < animations.length; i++) {
       const arrayBars = document.getElementsByClassName('array-bar');
       const isColorChange =
@@ -117,18 +166,26 @@ export default class SortingVisualizer extends React.Component {
         setTimeout(() => {
           barOneStyle.backgroundColor = color;
           barTwoStyle.backgroundColor = color;
-        }, i * this.state.animationSpeed);
+        }, i * animationSpeed);
       } else {
         setTimeout(() => {
           const [, barOneIdx, newHeight] = animations[i];
           const barOneStyle = arrayBars[barOneIdx].style;
           barOneStyle.height = `${newHeight}px`;
-        }, i * this.state.animationSpeed);
+        }, i * animationSpeed);
       }
     }
+
+    setTimeout(() => {
+      this.handleSortCompletion();
+    }, animations.length * animationSpeed);
+
+    this.fixKeep();
   }
 
   selectionSort() {
+    this.setState({sorting: true});
+    this.getKeep();
     const animations = getSelectionSortAnimations(this.state.array);
     for (let i = 0; i < animations.length; i++) {
       const arrayBars = document.getElementsByClassName('array-bar');
@@ -150,9 +207,11 @@ export default class SortingVisualizer extends React.Component {
           const [, barOneIdx, newHeight] = animations[i];
           const barOneStyle = arrayBars[barOneIdx].style;
           barOneStyle.height = `${newHeight}px`;
+          if (i === animations.length - 1) this.handleSortCompletion();
         }, i * this.state.animationSpeed);
       }
     }
+    this.fixKeep();
   }
 
   testSortingAlgorithms() {
@@ -169,7 +228,13 @@ export default class SortingVisualizer extends React.Component {
   }
 
   render() {
-    const {array, tempAnimationSpeed, tempNumberOfArrayBars} = this.state;
+    const {
+      array,
+      tempAnimationSpeed,
+      tempNumberOfArrayBars,
+      sorting,
+      countdown,
+    } = this.state;
 
     return (
       <div className="container">
@@ -186,12 +251,38 @@ export default class SortingVisualizer extends React.Component {
           ))}
         </div>
 
+        {countdown > 0 && (
+          <div className="countdown">
+            Resetting array in {countdown} second.
+          </div>
+        )}
+
         <div className="button-container">
-          <button onClick={() => this.resetArray()}>Generate New Array</button>
-          <button onClick={() => this.mergeSort()}>Merge Sort</button>
-          <button onClick={() => this.quickSort()}>Quick Sort</button>
-          <button onClick={() => this.bubbleSort()}>Bubble Sort</button>
-          <button onClick={() => this.selectionSort()}>Selection Sort</button>
+          <button
+            onClick={() => this.resetArray()}
+            disabled={sorting || countdown}>
+            Generate New Array
+          </button>
+          <button
+            onClick={() => this.mergeSort()}
+            disabled={sorting || countdown}>
+            Merge Sort
+          </button>
+          <button
+            onClick={() => this.quickSort()}
+            disabled={sorting || countdown}>
+            Quick Sort
+          </button>
+          <button
+            onClick={() => this.bubbleSort()}
+            disabled={sorting || countdown}>
+            Bubble Sort
+          </button>
+          <button
+            onClick={() => this.selectionSort()}
+            disabled={sorting || countdown}>
+            Selection Sort
+          </button>
         </div>
         <div className="settings-container">
           <div>
@@ -210,7 +301,11 @@ export default class SortingVisualizer extends React.Component {
               onChange={e => this.handleChange(e, 'tempNumberOfArrayBars')}
             />
           </div>
-          <button onClick={() => this.updateSettings()}>Update Settings</button>
+          <button
+            onClick={() => this.updateSettings()}
+            disabled={sorting || countdown}>
+            Update Settings
+          </button>
         </div>
       </div>
     );

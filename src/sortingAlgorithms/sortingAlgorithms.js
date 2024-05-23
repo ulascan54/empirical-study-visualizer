@@ -1,6 +1,6 @@
 export function getMergeSortAnimations(array) {
   const animations = [];
-  if (array.length <= 1) return array;
+  if (array.length <= 1) return [];
   const auxiliaryArray = array.slice();
   mergeSortHelper(array, 0, array.length - 1, auxiliaryArray, animations);
   return animations;
@@ -58,7 +58,7 @@ function doMerge(
 
 export function getQuickSortAnimations(array) {
   const animations = [];
-  if (array.length <= 1) return array;
+  if (array.length <= 1) return [];
   quickSortHelper(array, 0, array.length - 1, animations);
   return animations;
 }
@@ -95,7 +95,7 @@ function partition(mainArray, startIdx, endIdx, animations) {
 
 export function getBubbleSortAnimations(array) {
   const animations = [];
-  if (array.length <= 1) return array;
+  if (array.length <= 1) return animations;
   let n = array.length;
   let swapped;
   do {
@@ -108,6 +108,9 @@ export function getBubbleSortAnimations(array) {
         animations.push(['swap', i, array[i - 1]]);
         [array[i - 1], array[i]] = [array[i], array[i - 1]];
         swapped = true;
+      } else {
+        animations.push(['noSwap', i - 1, array[i - 1]]);
+        animations.push(['noSwap', i, array[i]]);
       }
     }
     n--;
@@ -117,7 +120,7 @@ export function getBubbleSortAnimations(array) {
 
 export function getSelectionSortAnimations(array) {
   const animations = [];
-  if (array.length <= 1) return array;
+  if (array.length <= 1) return [];
   const n = array.length;
   for (let i = 0; i < n - 1; i++) {
     let minIdx = i;
